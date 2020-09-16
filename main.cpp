@@ -2,6 +2,7 @@
 #include "MatrixKernel.h"
 #include "string.h"
 #include <cassert>
+#include <chrono>
 #include <iostream>
 #include <string>
 
@@ -30,6 +31,7 @@ int main(int argc, char *argv[]) {
     printf("-h to see this help\n");
     printf("-L <filename> file where matrix L is stored \n");
     printf("-b <filename> file where vector b is stored \n");
+    printf("-mode serial_basic | serial_optimized | parallel \n");
     return 0;
   }
 
@@ -37,7 +39,6 @@ int main(int argc, char *argv[]) {
   std::string fileForB(read_string(argc, argv, "-b", (char *)""));
 
   CscMatrix cscMatrix;
-  MatrixKernel matrixKernel;
 
   int L_m, L_n, L_nz, *Li, *Lp;
   double *Lx;
@@ -49,7 +50,22 @@ int main(int argc, char *argv[]) {
 
   assert(L_n == b_n);
 
-  if (find_option(argc, argv, "-serial_basic")) {
-    matrixKernel.lsolve_basic(L_n, Lp, Li, Lx, bx);
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  std::chrono::duration<double> elapsed_time;
+
+  std::string mode(read_string(argc, argv, "-mode", (char *)""));
+
+  if (mode == "serial_basic") {
+    start = std::chrono::system_clock::now();
+    lsolve_basic(L_n, Lp, Li, Lx, bx);
+    end = std::chrono::system_clock::now();
+    elapsed_time = end - start;
+    std::cout << "Basic Serial: " << elapsed_time.count() << std::endl;
+  } else if (mode == "serial_optimized") {
+    start = std::chrono::system_clock::now();
+    lsolve_optimized(L_n, Lp, Li, Lx, bx);
+    end = std::chrono::system_clock::now();
+    elapsed_time = end - start;
+    std::cout << "Optimized Serial: " << elapsed_time.count() << std::endl;
   }
 }
