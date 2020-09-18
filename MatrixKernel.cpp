@@ -1,7 +1,9 @@
 #include "MatrixKernel.h"
+#include "string.h"
 #include <algorithm>
 #include <cassert>
-#include <string.h>
+#include <cmath>
+#include <iostream>
 
 int lsolveBasic(int n, int *Lp, int *Li, double *Lx, double *x) {
   int p, j;
@@ -97,4 +99,32 @@ int buildLevelSets(int n, int nz, int *Lp, int *Li, int *&ilev, int *&jlev) {
   }
 
   return numLevels;
+}
+
+int spmvCsc(int n, int *Ap, int *Ai, double *Ax, double *x, double *y) {
+  int p, j;
+  if (!Ap || !x || !y)
+    return (0);
+  for (j = 0; j < n; j++) {
+    for (p = Ap[j]; p < Ap[j + 1]; p++) {
+      y[Ai[p]] += Ax[p] * x[j];
+    }
+  }
+  return (1);
+}
+
+bool areDoubleSame(double a, double b) {
+  return (fabs(a - b) <= EPSILON * std::max(fabs(a), fabs(b)));
+}
+
+void validateTriangularSolve(int n, int *Lp, int *Li, double *Lx, double *b,
+                             double *x) {
+  double y[n];
+  memset(y, 0.0, sizeof(double) * n);
+
+  spmvCsc(n, Lp, Li, Lx, x, y);
+
+  for (int i = 0; i < n; ++i) {
+    assert(areDoubleSame(y[i], b[i]));
+  }
 }

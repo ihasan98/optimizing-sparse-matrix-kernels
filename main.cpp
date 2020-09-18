@@ -1,8 +1,8 @@
 #include "CscMatrix.h"
 #include "MatrixKernel.h"
-#include "string.h"
 #include <cassert>
 #include <chrono>
+#include <cstring>
 #include <iostream>
 #include <string>
 
@@ -31,9 +31,12 @@ int main(int argc, char *argv[]) {
     printf("-h to see this help\n");
     printf("-L <filename> file where matrix L is stored \n");
     printf("-b <filename> file where vector b is stored \n");
+    printf("-v validates the results before printing timing stats \n");
     printf("-mode serial_basic | serial_optimized | parallel \n");
     return 0;
   }
+
+  int validate = find_option(argc, argv, "-v");
 
   std::string fileForL(read_string(argc, argv, "-L", (char *)""));
   std::string fileForB(read_string(argc, argv, "-b", (char *)""));
@@ -43,10 +46,13 @@ int main(int argc, char *argv[]) {
   loadCscMatrix(fileForL, L_m, L_n, L_nz, Li, Lp, Lx);
 
   int b_n;
-  double *bx;
-  loadRhsVector(fileForB, b_n, bx);
+  double *b;
+  loadRhsVector(fileForB, b_n, b);
 
   assert(L_n == b_n);
+
+  double x[b_n];
+  memcpy(x, b, sizeof(double) * b_n); // Making x = b
 
   std::chrono::time_point<std::chrono::system_clock> start, end;
   std::chrono::duration<double> elapsed_time;
@@ -55,26 +61,28 @@ int main(int argc, char *argv[]) {
 
   if (mode == "serial_basic") {
     start = std::chrono::system_clock::now();
-    lsolveBasic(L_n, Lp, Li, Lx, bx);
+    lsolveBasic(L_n, Lp, Li, Lx, x);
     end = std::chrono::system_clock::now();
-    elapsed_time = end - start;
-    std::cout << "Basic Serial: " << elapsed_time.count() * 1000 << "ms"
-              << std::endl;
   } else if (mode == "serial_optimized") {
     start = std::chrono::system_clock::now();
-    lsolveOptimized(L_n, Lp, Li, Lx, bx);
+    lsolveOptimized(L_n, Lp, Li, Lx, x);
     end = std::chrono::system_clock::now();
-    elapsed_time = end - start;
-    std::cout << "Optimized Serial: " << elapsed_time.count() * 1000 << "ms"
-              << std::endl;
   } else if (mode == "parallel") {
     int *ilev, *jlev;
     int numLevels = buildLevelSets(L_n, L_nz, Lp, Li, ilev, jlev);
     start = std::chrono::system_clock::now();
-    lsolveParallel(L_n, Lp, Li, Lx, bx, numLevels, ilev, jlev);
+    lsolveParallel(L_n, Lp, Li, Lx, x, numLevels, ilev, jlev);
     end = std::chrono::system_clock::now();
-    elapsed_time = end - start;
-    std::cout << "Parallel: " << elapsed_time.count() * 1000 << "ms"
-              << std::endl;
+  } else {
+    std::cout << "Incorrect mode" << std::endl;
+    exit(1);
   }
+  elapsed_time = end - start;
+
+  if (validate >= 0) {
+    validateTriangularSolve(L_n, Lp, Li, Lx, b, x);
+    std::cout << "Final output has been verified to be correct." << std::endl;
+  }
+
+  std::cout << mode << " " << elapsed_time.count() * 1000 << "ms" << std::endl;
 }
