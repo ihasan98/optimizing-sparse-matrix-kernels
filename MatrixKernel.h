@@ -12,8 +12,18 @@
  * In/Out:
  * x : the right hand-side b at start and the solution x at the end.
  */
-int lsolve_basic(int n, int *Lp, int *Li, double *Lx, double *x);
+int lsolveBasic(int n, int *Lp, int *Li, double *Lx, double *x);
 
-int lsolve_optimized(int n, int *Lp, int *Li, double *Lx, double *x);
+int lsolveOptimized(int n, int *Lp, int *Li, double *Lx, double *x);
+
+int lsolveParallel(int n, int *Lp, int *Li, double *Lx, double *x,
+                   int numLevels, int *ilev, int *jlev);
+
+/*
+ *This returns the number of levels. [jlev] is an array that lists the unknowns
+ *in a non decreasing order of their levels. [ilev] contains the pointers to the
+ *levels in [jlev]
+ */
+int buildLevelSets(int n, int nz, int *Lp, int *Li, int *&ilev, int *&jlev);
 
 #endif // OPTIMIZING_SPARSE_MATRIX_KERNELS_MATRIXKERNEL_H

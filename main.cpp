@@ -24,6 +24,12 @@ char *read_string(int argc, char **argv, const char *option,
   return default_value;
 }
 
+void print_x(int n, double *x) {
+  for (int i = 0; i < n; ++i) {
+    std::cout << x[i] << std::endl;
+  }
+}
+
 int main(int argc, char *argv[]) {
 
   if (find_option(argc, argv, "-h") >= 0) {
@@ -57,15 +63,28 @@ int main(int argc, char *argv[]) {
 
   if (mode == "serial_basic") {
     start = std::chrono::system_clock::now();
-    lsolve_basic(L_n, Lp, Li, Lx, bx);
+    lsolveBasic(L_n, Lp, Li, Lx, bx);
     end = std::chrono::system_clock::now();
     elapsed_time = end - start;
-    std::cout << "Basic Serial: " << elapsed_time.count() << std::endl;
+    std::cout << "Basic Serial: " << elapsed_time.count() * 1000 << "ms"
+              << std::endl;
+    // print_x(L_n, bx);
   } else if (mode == "serial_optimized") {
     start = std::chrono::system_clock::now();
-    lsolve_optimized(L_n, Lp, Li, Lx, bx);
+    lsolveOptimized(L_n, Lp, Li, Lx, bx);
     end = std::chrono::system_clock::now();
     elapsed_time = end - start;
-    std::cout << "Optimized Serial: " << elapsed_time.count() << std::endl;
+    std::cout << "Optimized Serial: " << elapsed_time.count() * 1000 << "ms"
+              << std::endl;
+  } else if (mode == "parallel") {
+    int *ilev, *jlev;
+    int numLevels = buildLevelSets(L_n, L_nz, Lp, Li, ilev, jlev);
+    start = std::chrono::system_clock::now();
+    lsolveParallel(L_n, Lp, Li, Lx, bx, numLevels, ilev, jlev);
+    end = std::chrono::system_clock::now();
+    elapsed_time = end - start;
+    std::cout << "Parallel: " << elapsed_time.count() * 1000 << "ms"
+              << std::endl;
+    // print_x(L_n, bx);
   }
 }

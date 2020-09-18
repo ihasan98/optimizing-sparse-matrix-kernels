@@ -1,6 +1,9 @@
 #include "MatrixKernel.h"
+#include <algorithm>
+#include <cassert>
+#include <string.h>
 
-int lsolve_basic(int n, int *Lp, int *Li, double *Lx, double *x) {
+int lsolveBasic(int n, int *Lp, int *Li, double *Lx, double *x) {
   int p, j;
   if (!Lp || !Li || !x)
     return (0); /* check inputs */
@@ -13,7 +16,7 @@ int lsolve_basic(int n, int *Lp, int *Li, double *Lx, double *x) {
   return (1);
 }
 
-int lsolve_optimized(int n, int *Lp, int *Li, double *Lx, double *x) {
+int lsolveOptimized(int n, int *Lp, int *Li, double *Lx, double *x) {
   int p, j;
   if (!Lp || !Li || !x)
     return (0); /* check inputs */
@@ -25,4 +28,74 @@ int lsolve_optimized(int n, int *Lp, int *Li, double *Lx, double *x) {
     }
   }
   return (1);
+}
+
+int lsolveParallel(int n, int *Lp, int *Li, double *Lx, double *x,
+                   int numLevels, int *ilev, int *jlev) {
+  int m, j, p;
+  if (!Lp || !Li || !x)
+    return (0); /* check inputs */
+
+  for (m = 0; m < numLevels; ++m) {
+#pragma omp parallel for default(shared) schedule(auto)
+    for (int k = ilev[m]; k < ilev[m + 1]; ++k) {
+      j = jlev[k];
+      x[j] /= Lx[Lp[j]];
+
+      for (p = Lp[j] + 1; p < Lp[j + 1]; ++p) {
+        double tmp = Lx[p] * x[j];
+        int index = Li[p];
+#pragma omp atomic
+        x[index] -= tmp;
+      }
+    }
+  }
+
+  return (1);
+}
+
+// TODO: Comment/document this code
+int buildLevelSets(int n, int nz, int *Lp, int *Li, int *&ilev, int *&jlev) {
+  int levels[n];
+  int countAtEachLevel[n];
+  memset(levels, 0, sizeof(int) * n);
+  memset(countAtEachLevel, 0, sizeof(int) * n);
+  countAtEachLevel[0] = n;
+
+  int maxLevel = 0;
+  int row;
+
+  for (int j = 0; j < n; ++j) {
+    for (int i = Lp[j]; i < Lp[j + 1]; ++i) {
+      row = Li[i];
+      countAtEachLevel[levels[row]]--;
+      levels[row] = std::max(levels[j] + 1, levels[row]);
+      countAtEachLevel[levels[row]]++;
+      maxLevel = std::max(maxLevel, levels[row]);
+    }
+  }
+
+  int numLevels = maxLevel + 1;
+
+  int eachLevelPointer[numLevels];
+  memset(eachLevelPointer, 0, sizeof(int) * numLevels);
+
+  ilev = (int *)malloc(sizeof(int) * (numLevels + 1));
+  ilev[0] = 0;
+
+  for (int i = 1; i < numLevels + 1; ++i) {
+    ilev[i] = ilev[i - 1] + countAtEachLevel[i - 1];
+  }
+
+  assert(ilev[numLevels] == n);
+
+  jlev = (int *)malloc(sizeof(int) * n);
+
+  for (int i = 0; i < n; ++i) {
+    int level = levels[i];
+    jlev[ilev[level] + eachLevelPointer[level]] = i;
+    eachLevelPointer[level]++;
+  }
+
+  return numLevels;
 }
