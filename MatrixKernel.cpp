@@ -114,7 +114,7 @@ int spmvCsc(int n, int *Ap, int *Ai, double *Ax, double *x, double *y) {
 }
 
 bool areDoubleSame(double a, double b) {
-  return (fabs(a - b) <= EPSILON * std::max(fabs(a), fabs(b)));
+  return (fabs(a - b) <= EPSILON * std::max({1.0, fabs(a), fabs(b)}));
 }
 
 void validateTriangularSolve(int n, int *Lp, int *Li, double *Lx, double *b,
