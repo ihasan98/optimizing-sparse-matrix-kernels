@@ -37,7 +37,7 @@ int lsolveParallel(int n, int *Lp, int *Li, double *Lx, double *x,
     return (0); /* check inputs */
 
   for (m = 0; m < numLevels; ++m) {
-#pragma omp parallel for default(shared) schedule(auto)
+#pragma omp parallel for default(shared) schedule(dynamic, 4)
     for (int k = ilev[m]; k < ilev[m + 1]; ++k) {
       j = jlev[k];
       x[j] /= Lx[Lp[j]];
@@ -68,15 +68,14 @@ int buildLevelSets(int n, int nz, int *Lp, int *Li, int *&ilev, int *&jlev) {
   for (int j = 0; j < n; ++j) {
     for (int i = Lp[j]; i < Lp[j + 1]; ++i) {
       row = Li[i];
-      countAtEachLevel[levels[row]]--;
+      (countAtEachLevel[levels[row]])--;
       levels[row] = std::max(levels[j] + 1, levels[row]);
-      countAtEachLevel[levels[row]]++;
+      (countAtEachLevel[levels[row]])++;
       maxLevel = std::max(maxLevel, levels[row]);
     }
   }
 
   int numLevels = maxLevel + 1;
-
   int eachLevelPointer[numLevels];
   memset(eachLevelPointer, 0, sizeof(int) * numLevels);
 
