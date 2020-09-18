@@ -24,12 +24,6 @@ char *read_string(int argc, char **argv, const char *option,
   return default_value;
 }
 
-void print_x(int n, double *x) {
-  for (int i = 0; i < n; ++i) {
-    std::cout << x[i] << std::endl;
-  }
-}
-
 int main(int argc, char *argv[]) {
 
   if (find_option(argc, argv, "-h") >= 0) {
@@ -44,15 +38,13 @@ int main(int argc, char *argv[]) {
   std::string fileForL(read_string(argc, argv, "-L", (char *)""));
   std::string fileForB(read_string(argc, argv, "-b", (char *)""));
 
-  CscMatrix cscMatrix;
-
   int L_m, L_n, L_nz, *Li, *Lp;
   double *Lx;
-  cscMatrix.loadCscMatrix(fileForL, L_m, L_n, L_nz, Li, Lp, Lx);
+  loadCscMatrix(fileForL, L_m, L_n, L_nz, Li, Lp, Lx);
 
   int b_n;
   double *bx;
-  cscMatrix.loadRhsVector(fileForB, b_n, bx);
+  loadRhsVector(fileForB, b_n, bx);
 
   assert(L_n == b_n);
 
@@ -68,7 +60,6 @@ int main(int argc, char *argv[]) {
     elapsed_time = end - start;
     std::cout << "Basic Serial: " << elapsed_time.count() * 1000 << "ms"
               << std::endl;
-    // print_x(L_n, bx);
   } else if (mode == "serial_optimized") {
     start = std::chrono::system_clock::now();
     lsolveOptimized(L_n, Lp, Li, Lx, bx);
@@ -85,6 +76,5 @@ int main(int argc, char *argv[]) {
     elapsed_time = end - start;
     std::cout << "Parallel: " << elapsed_time.count() * 1000 << "ms"
               << std::endl;
-    // print_x(L_n, bx);
   }
 }

@@ -6,8 +6,8 @@
 #include <sstream>
 #include <string>
 
-bool CscMatrix::loadCscMatrix(std::string &filename, int &m, int &n, int &nz,
-                              int *&rows, int *&colPtrs, double *&values) {
+bool loadCscMatrix(std::string &filename, int &m, int &n, int &nz, int *&rows,
+                   int *&colPtrs, double *&values) {
   std::ifstream matrixMarket(filename, std::ios::in);
   if (!matrixMarket.is_open()) {
     std::cout << "Unable to open MatrixMarket file." << std::endl;
@@ -49,7 +49,7 @@ bool CscMatrix::loadCscMatrix(std::string &filename, int &m, int &n, int &nz,
   return true;
 }
 
-bool CscMatrix::loadRhsVector(std::string &filename, int &n, double *&values) {
+bool loadRhsVector(std::string &filename, int &n, double *&values) {
   std::ifstream matrixMarket(filename, std::ios::in);
   if (!matrixMarket.is_open()) {
     std::cout << "Unable to open MatrixMarket file." << std::endl;
@@ -101,8 +101,8 @@ bool CscMatrix::loadRhsVector(std::string &filename, int &n, double *&values) {
   return true;
 }
 
-void CscMatrix::printCscMatrix(const int &n, const int &nz, int *&rows,
-                               int *&colPtrs, double *&values) {
+void printCscMatrix(const int &n, const int &nz, int *&rows, int *&colPtrs,
+                    double *&values) {
   std::cout << "COLS:" << std::endl;
 
   for (int i = 0; i <= n; ++i) {
@@ -122,9 +122,9 @@ void CscMatrix::printCscMatrix(const int &n, const int &nz, int *&rows,
   }
 }
 
-void CscMatrix::coordinateFormatToCsc(std::ifstream &matrixMarket, const int &n,
-                                      const int &nz, int *&rows, int *&colPtrs,
-                                      double *&values) {
+void coordinateFormatToCsc(std::ifstream &matrixMarket, const int &n,
+                           const int &nz, int *&rows, int *&colPtrs,
+                           double *&values) {
   int row, col, curCol, elementsInCurCol;
   double value;
 
@@ -152,15 +152,14 @@ void CscMatrix::coordinateFormatToCsc(std::ifstream &matrixMarket, const int &n,
   colPtrs[n] = colPtrs[n - 1] + elementsInCurCol;
 }
 
-void CscMatrix::arrayFormatToVals(std::ifstream &matrixMarket, const int &m,
-                                  const int &n, double *&values) {
+void arrayFormatToVals(std::ifstream &matrixMarket, const int &m, const int &n,
+                       double *&values) {
   for (int i = 0; i < m * n; ++i) {
     matrixMarket >> values[i];
   }
 }
 
-bool CscMatrix::validateHeaderLine(const std::string &line,
-                                   std::string &format) {
+bool validateHeaderLine(const std::string &line, std::string &format) {
   std::istringstream iss(line);
   std::string banner, object, field, symmetry;
 
@@ -171,8 +170,8 @@ bool CscMatrix::validateHeaderLine(const std::string &line,
   return (banner == "%%MatrixMarket" || object == "matrix" || field == "real");
 }
 
-bool CscMatrix::getDims(const std::string &line, const std::string &format,
-                        int &m, int &n, int &nz) {
+bool getDims(const std::string &line, const std::string &format, int &m, int &n,
+             int &nz) {
   std::istringstream iss(line);
 
   if (format == "coordinate") {
